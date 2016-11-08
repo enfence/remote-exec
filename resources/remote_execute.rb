@@ -43,12 +43,12 @@ action :run do
     # check return code?
     if property_is_set?(:returns)
       if returns.is_a?(Array)
-        raise stderr_data unless returns.include?(r[2])
+        raise r[1] unless returns.include?(r[2])
       else
-        raise stderr_data unless r[2] == returns
+        raise r[1] unless r[2] == returns
       end
     else
-      raise stderr_data unless r[2] == 0
+      raise r[1] unless r[2] == 0
     end
   end if really_run
 end
