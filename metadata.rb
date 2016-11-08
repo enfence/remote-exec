@@ -1,15 +1,9 @@
 name 'remote-exec'
-maintainer 'The Authors'
-maintainer_email 'you@example.com'
-license 'all_rights'
-description 'Installs/Configures remote-exec'
-long_description 'Installs/Configures remote-exec'
+maintainer 'eNFence GmbH'
+maintainer_email 'andrey.klyachkin@enfence.com'
+license 'Apache 2.0'
+description 'remote_execute resource for Chef'
+long_description IO.read(File.join(File.dirname(__FILE__), 'README.md'))
 version '0.1.0'
-
-# If you upload to Supermarket you should set this so your cookbook
-# gets a `View Issues` link
-# issues_url 'https://github.com/<insert_org_here>/remote-exec/issues' if respond_to?(:issues_url)
-
-# If you upload to Supermarket you should set this so your cookbook
-# gets a `View Source` link
-# source_url 'https://github.com/<insert_org_here>/remote-exec' if respond_to?(:source_url)
+issues_url 'https://github.com/enfence/remote-exec/issues' if respond_to?(:issues_url)
+source_url 'https://github.com/enfence/remote-exec' if respond_to?(:source_url)
