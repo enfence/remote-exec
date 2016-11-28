@@ -7,3 +7,8 @@ Metrics/MethodLength:
 Style/HashSyntax:
   Enabled: false
 
+Metrics/AbcSize:
+  Max: 20
+
+Metrics/BlockNesting:
+  Max: 5
