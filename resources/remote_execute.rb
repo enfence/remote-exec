@@ -21,7 +21,7 @@ default_action :run
 
 property :command, String, name_property: true, required: true
 property :returns, [Integer, Array]
-property :timeout, Integer
+property :timeout, Integer, default: 60
 property :user, String
 property :password, String
 property :address, String, required: true

@@ -48,7 +48,7 @@ module RemoteExecute
     stderr_data = ''
     exit_code = nil
     exit_signal = nil
-    Net::SSH.start(address, user, :password => password) do |ssh|
+    Net::SSH.start(address, user, :password => password, :timeout => timeout) do |ssh|
       ssh.open_channel do |channel|
         channel.exec(cmd) do |_, success|
           abort "FAILED: couldn't execute command (ssh.channel.exec)" unless success

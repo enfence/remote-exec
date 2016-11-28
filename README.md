@@ -28,6 +28,7 @@ remote_execute 'name' do
   returns   Integer, Array  #
   password  String          #
   user      String          #
+  timeout   Integer         # default: 60
 
   not_if_remote   String    #
   only_if_remote  String    #
@@ -65,6 +66,9 @@ The resource has the following properties:
 `password`
   The password for the user to connect to the remote server. If not specified, Net:SSH tries to connect using SSH keys, and if it doesn't help, asks for a password.
 
+`timeout`
+  Timeout for SSH session. Default is 60 seconds.
+
 ### Guards
 
 There are 2 additional guards, implemented in the resource:
@@ -86,3 +90,13 @@ remote_execute 'create a file' do
   only_if_remote 'ls /dev/null'
 end
 ````
+
+## ChangeLog
+
+### v0.1.1 2016-11-28
+
+- timeout option added
+
+### v0.1.0 2016-11-07
+
+- Initial release
