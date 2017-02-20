@@ -1,6 +1,6 @@
 # remote-exec cookbook
 
-This cookbook implements remote_execute resource. As its name implies, the resource
+This cookbook implements ```remote_execute``` resource. As its name implies, the resource
 executes a command on a remote server using ssh.
 
 ## Requirements
@@ -29,6 +29,7 @@ remote_execute 'name' do
   password  String          #
   user      String          #
   timeout   Integer         # default: 60
+  input     String          #
 
   not_if_remote   String    #
   only_if_remote  String    #
@@ -69,6 +70,9 @@ The resource has the following properties:
 `timeout`
   Timeout for SSH session. Default is 60 seconds.
 
+`input`
+  The string will be sent as stdin to the command.
+
 ### Guards
 
 There are 2 additional guards, implemented in the resource:
@@ -92,6 +96,10 @@ end
 ````
 
 ## ChangeLog
+
+### v0.2.0 2017-02-18
+
+- input option added
 
 ### v0.1.1 2016-11-28
 

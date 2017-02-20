@@ -25,6 +25,7 @@ property :timeout, Integer, default: 60
 property :user, String
 property :password, String
 property :address, String, required: true
+property :input, String
 
 property :not_if_remote, String
 property :only_if_remote, String

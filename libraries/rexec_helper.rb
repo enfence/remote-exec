@@ -56,6 +56,10 @@ module RemoteExecute
           channel.on_extended_data { |_, data| stderr_data += data }
           channel.on_request('exit-status') { |_, data| exit_code = data.read_long }
           channel.on_request('exit-signal') { |_, data| exit_signal = data.read_long }
+          unless input.nil?
+            channel.send_data(input)
+            channel.eof!
+          end
         end
       end
       ssh.loop
