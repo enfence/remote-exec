@@ -1,0 +1,23 @@
+sudo: required
+
+before_install:
+- 'wget https://packages.chef.io/files/stable/chefdk/2.6.1/ubuntu/16.04/chefdk_2.6.1-1_amd64.deb'
+- 'echo "e857267ea3559952d4332c2e27b7cf104ede3064a4d24de7a1a2de62b799438d chefdk_2.6.1-1_amd64.deb" | sha256sum -c -'
+- 'sudo dpkg -i chefdk_2.6.1-1_amd64.deb'
+
+jobs:
+  include:
+  - stage: "Linting"
+    name: "Foodcritic"
+    script:
+    - foodcritic .
+  - name: "Cookstyle"
+    script:
+    - cookstyle
+  - stage: "Testing"
+    name: "ChefSpec"
+    script:
+    - chef exec rspec
+    name: "Kitchen"
+    script:
+    - kitchen test
