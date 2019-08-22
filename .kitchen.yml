@@ -19,15 +19,20 @@ verifier:
 platforms:
   - name: ubuntu-16.04
     driver:
+      privileged: true
       image: dokken/ubuntu-16.04
+      pid_one_command: /bin/systemd
   - name: centos-7
     driver:
+      privileged: true
       image: dokken/centos-7
+      pid_one_command: /usr/lib/systemd/systemd
 
 suites:
   - name: default
     run_list:
-      - recipe[remote-exec::default]
+      - recipe[test::sshd]
+      - recipe[test::exectest]
     verifier:
       inspec_tests:
         - test/recipes
