@@ -18,6 +18,6 @@ jobs:
     name: "ChefSpec"
     script:
     - chef exec rspec
-    name: "Kitchen"
+  - name: "Kitchen"
     script:
     - kitchen test
