@@ -30,6 +30,13 @@ property :only_if_remote, String
 
 action :run do
   Chef::Log.debug('remote_execute.rb: action_run')
+
+  allowed_exit_codes = if new_resource.returns.is_a?(Array)
+                         new_resource.returns
+                       else
+                         [new_resource.returns]
+                       end
+
   ssh_session do |session|
     if !new_resource.not_if_remote.nil? && !new_resource.not_if_remote.empty?
       break if eval_command(session, new_resource.not_if_remote)
@@ -38,17 +45,32 @@ action :run do
       break unless eval_command(session, new_resource.only_if_remote)
     end
 
-    converge_by("execute #{new_resource.command.inspect} on server #{new_resource.address.inspect} as #{new_resource.user.inspect}") do
+    descriptor = "#{new_resource.command.inspect} on server #{new_resource.address.inspect} as #{new_resource.user.inspect}"
+    converge_by("execute #{descriptor}") do
       r = ssh_exec(session, new_resource.command, input: new_resource.input)
       Chef::Log.debug("remote_execute.rb: action_run(#{new_resource.command}) "\
                       "return code #{r[2]}, "\
                       "stdout #{r[0]}, "\
                       "stderr #{r[1]}")
       # check return code?
-      if new_resource.returns.is_a?(Array)
-        raise r[1] unless new_resource.returns.include?(r[2])
-      else
-        raise r[1] unless r[2] == new_resource.returns
+      success = allowed_exit_codes.include?(r[2])
+      unless success
+        error_parts = [
+          "Expected process to exit with #{allowed_exit_codes.inspect}, but received #{r[2]}",
+        ]
+        if new_resource.sensitive
+          error_parts.push(
+            'STDOUT/STDERR suppressed for sensitive resource'
+          )
+        else
+          error_parts.push(
+            "---- Begin output of #{descriptor} ----",
+            "STDOUT: #{r[0]}",
+            "STDERR: #{r[1]}",
+            "---- End output of #{descriptor}----"
+          )
+        end
+        raise error_parts.join("\n")
       end
     end
   end
