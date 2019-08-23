@@ -195,3 +195,12 @@ remote_execute 'non-existant-command' do
   address 'localhost'
   returns 127
 end
+
+# Check that action :nothing does nothing
+
+remote_execute 'touch /tmp/should-not-exist' do
+  action :nothing
+  user 'testuser'
+  password node['test-cookbook']['testuser']['password']
+  address 'localhost'
+end

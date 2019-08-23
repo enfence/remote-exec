@@ -54,10 +54,6 @@ action :run do
   end
 end
 
-action :nothing do
-  nil
-end
-
 action_class do
   def eval_command(session, command)
     rc = ssh_exec(session, command)
