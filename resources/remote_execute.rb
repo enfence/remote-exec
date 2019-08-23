@@ -24,6 +24,7 @@ property :user, String
 property :password, String, sensitive: true
 property :address, String, required: true
 property :input, String
+property :interactive, [TrueClass, FalseClass], default: false
 
 property :not_if_remote, String
 property :only_if_remote, String
@@ -90,7 +91,8 @@ action_class do
     Net::SSH.start(new_resource.address,
                    new_resource.user,
                    password: new_resource.password,
-                   timeout: new_resource.timeout) do |session|
+                   timeout: new_resource.timeout,
+                   non_interactive: !new_resource.interactive) do |session|
       retval = yield session
     end
     retval

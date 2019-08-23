@@ -16,18 +16,19 @@ Syntax:
 
 ```ruby
 remote_execute 'name' do
-  address   String          #
-  command   String          # defaults to name
-  returns   Integer, Array  #
-  password  String          #
-  user      String          #
-  timeout   Integer         # default: 60
-  input     String          #
+  address     String          #
+  command     String          # defaults to name
+  returns     Integer, Array  #
+  password    String          #
+  user        String          #
+  timeout     Integer         # default: 60
+  input       String          #
+  interactive boolean         # default: false
 
-  not_if_remote   String    # Remotely executed shell guard command like not_if
-  only_if_remote  String    # Remotely executed shell guard command like only_if
+  not_if_remote   String      # Remotely executed shell guard command like not_if
+  only_if_remote  String      # Remotely executed shell guard command like only_if
 
-  action    Symbol          # defaults to :run
+  action    Symbol            # defaults to :run
 end
 ```
 
@@ -51,11 +52,13 @@ The resource has the following properties:
 
 * `user`: The username used to connect to the remote server. Defaults to the user name under which the chef-client is running.
 
-* `password`: The password for the user to connect to the remote server. If not specified, Net::SSH tries to connect using SSH keys, and if it doesn't help, asks for a password.
+* `password`: The password for the user to connect to the remote server. If not specified, Net::SSH tries to connect using SSH keys, and if it doesn't help and `interactive` is set to true, asks for a password.
 
 * `timeout`: Timeout for SSH session. Default is 60 seconds.
 
 * `input`: If given, the string will be sent as stdin to the command.
+
+* `interactive`: If true and a password is not given and password authentication is the only method left, Net::SSH will ask for a password on the terminal. Default: false.
 
 #### Guards
 
