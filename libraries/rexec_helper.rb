@@ -53,7 +53,9 @@ module RemoteExecute
         channel.exec(cmd) do |_, success|
           abort "FAILED: couldn't execute command (ssh.channel.exec)" unless success
           channel.on_data { |_, data| stdout_data += data }
-          channel.on_extended_data { |_, data| stderr_data += data }
+          channel.on_extended_data do |_, type, data|
+            stderr_data += data if type == 1 # type 1 is stderr
+          end
           channel.on_request('exit-status') { |_, data| exit_code = data.read_long }
           channel.on_request('exit-signal') { |_, data| exit_signal = data.read_long }
           unless input.nil?

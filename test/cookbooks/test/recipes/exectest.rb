@@ -187,3 +187,11 @@ remote_execute 'not_if_remote with before notification' do
   notifies :create, 'file[/tmp/notify-before-not_if_remote]', :before
 end
 
+# Check that output on stderr does not break anything (#4)
+
+remote_execute 'non-existant-command' do
+  user 'testuser'
+  password node['test-cookbook']['testuser']['password']
+  address 'localhost'
+  returns 127
+end
