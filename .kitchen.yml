@@ -21,6 +21,11 @@ platforms:
       privileged: true
       image: dokken/ubuntu-16.04
       pid_one_command: /bin/systemd
+  - name: ubuntu-18.04
+    driver:
+      privileged: true
+      image: dokken/ubuntu-18.04
+      pid_one_command: /bin/systemd
   - name: centos-7
     driver:
       privileged: true
