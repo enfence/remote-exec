@@ -24,9 +24,10 @@ remote_execute 'name' do
   timeout     Integer         # default: 60
   input       String          #
   interactive boolean         # default: false
+  request_pty boolean         # default: false
 
-  not_if_remote   String, Array # Remotely executed shell guard command like not_if
-  only_if_remote  String, Array # Remotely executed shell guard command like only_if
+  not_if_remote String, Array, Hash # Remotely executed shell guard command like not_if
+  only_if_remote String, Array, Hash # Remotely executed shell guard command like only_if
 
   action    Symbol            # defaults to :run
 end
@@ -63,7 +64,40 @@ The resource has the following properties:
 
 * `interactive`: If true and a password is not given and password authentication is the only method left, Net::SSH will ask for a password on the terminal. Default: false.
 
+* `request_pty`: Whether to allocate a pseudo-TTY device (PTY) for the command execution.
+
+    If PTY allocation is requested but fails, an error is raised.
+
+    **Warning:** PTYs are not binary-safe. For this reason, combining the
+    `input` property with a `request_pty` value which enables TTY use for the
+    command itself is prohibited and will lead to an error.
+
+    **Note:** Using a PTY will merge the standard output and standard error
+    streams of the executed command.
+
 #### Guards
+
+##### Synopsis
+
+The guards can either take a string, an array or a hash. The hash supports the
+following keys:
+
+```ruby
+{
+    command: [String, Array],  # the command to execute as array or string
+    request_pty: [TrueClass, FalseClass]  # whether to request a pty. default: false
+}
+```
+
+If a string or array is given instead of a hash, the `value` is converted to
+`{command: value}`.
+
+* `command`: The command executed as guard. See the properties above for
+  details.
+* `request_pty`: Whether to request a PTY for the guard execution. See the
+  properties above for details on the implications of requesting a PTY.
+
+##### Description
 
 There are 2 additional guards, implemented in the resource:
 
@@ -71,9 +105,9 @@ There are 2 additional guards, implemented in the resource:
 
 * `only_if_remote`: It allows a resource to execute, only if the specified condition (command) returns on the remote server true (0).
 
-The evaluation of the guards uses the same mechanism as `command`, so you can use either an Array or a String here.
+The evaluation of the guards uses the same mechanism as `command`, so you can use either an Array or a String as command.
 
-Note: In contrast to the classic chef guards, these do not support blocks, since there is no sensible way to evaluate locally created blocks on a remote machine. Likewise, choosing a different guard interpreter or passing any other additional options to the guard is not supported either.
+Note: In contrast to the classic chef guards, these do not support blocks, since there is no sensible way to evaluate locally created blocks on a remote machine. Likewise, choosing a different guard interpreter is not supported either. Additional options are supported as described above.
 
 Note: The order in which not_if_remote and only_if_remote are executed is an implementation detail. Do not rely on side effects of either to be executed if you pass both.
 
@@ -87,7 +121,7 @@ remote_execute 'create a file' do
   address '192.168.0.1'
   user 'root'
   password 'dontknow'
-  only_if_remote 'ls /dev/null'
+  only_if_remote command: 'ls /dev/null', request_pty: false
 end
 ```
 

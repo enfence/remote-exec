@@ -251,3 +251,5 @@ remote_execute 'array not_if_remote guard' do
   address 'localhost'
   not_if_remote ['test', '!', '-f', '/tmp/guard target file']
 end
+
+include_recipe 'test::ptytest'

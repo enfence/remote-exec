@@ -25,9 +25,10 @@ property :password, String, sensitive: true
 property :address, String, required: true
 property :input, String
 property :interactive, [TrueClass, FalseClass], default: false
+property :request_pty, [TrueClass, FalseClass], default: false
 
-property :not_if_remote, [String, Array]
-property :only_if_remote, [String, Array]
+property :not_if_remote, [String, Array, Hash], coerce: proc { |v| RemoteExec::Validation.coerce_guard_config(v) }, callbacks: RemoteExec::Validation.guard_config_checks
+property :only_if_remote, [String, Array, Hash], coerce: proc { |v| RemoteExec::Validation.coerce_guard_config(v) }, callbacks: RemoteExec::Validation.guard_config_checks
 
 action :run do
   Chef::Log.debug('remote_execute.rb: action_run')
@@ -38,17 +39,27 @@ action :run do
                          [new_resource.returns]
                        end
 
+  if !new_resource.input.nil? && new_resource.request_pty
+    # XXX: IF we ever allow input with PTYs, the .eof! method used below will
+    # not work. Instead, we have to send double-\x04 (Ctrl+D a.k.a. End Of
+    # Tranmission ASCII control code) to signal EOF. This is all super-fragile
+    # which is why it is prohibited for now.
+    raise 'PTY requested for command execution, but input is given. The options are incompatible, as PTYs are not binary-safe.'
+  end
+
   ssh_session do |session|
     if !new_resource.not_if_remote.nil? && !new_resource.not_if_remote.empty?
-      break if eval_command(session, new_resource.not_if_remote)
+      break if eval_guard(session, new_resource.not_if_remote)
     end
     if !new_resource.only_if_remote.nil? && !new_resource.only_if_remote.empty?
-      break unless eval_command(session, new_resource.only_if_remote)
+      break unless eval_guard(session, new_resource.only_if_remote)
     end
 
     descriptor = "#{new_resource.command.inspect} on server #{new_resource.address.inspect} as #{new_resource.user.inspect}"
     converge_by("execute #{descriptor}") do
-      r = ssh_exec(session, new_resource.command, input: new_resource.input)
+      r = ssh_exec(session, new_resource.command,
+                   input: new_resource.input,
+                   request_pty: new_resource.request_pty)
       Chef::Log.debug("remote_execute.rb: action_run(#{new_resource.command}) "\
                       "return code #{r[2]}, "\
                       "stdout #{r[0]}, "\
@@ -78,8 +89,14 @@ action :run do
 end
 
 action_class do
-  def eval_command(session, command)
-    rc = ssh_exec(session, command)
+  def eval_guard(session, guard_command_config)
+    command = guard_command_config.fetch(:command)
+    request_pty = guard_command_config.fetch(:request_pty)
+    eval_command(session, command, request_pty)
+  end
+
+  def eval_command(session, command, with_pty)
+    rc = ssh_exec(session, command, request_pty: with_pty)
     Chef::Log.debug("eval_command: stdout: #{rc[0]}")
     Chef::Log.debug("eval_command: stderr: #{rc[1]}")
     return true if rc[2] == 0
@@ -98,7 +115,7 @@ action_class do
     retval
   end
 
-  def ssh_exec(session, command, input: nil)
+  def ssh_exec(session, command, input: nil, request_pty: false)
     # Unfortunately, SSH does not allow passing an execv-like array and only
     # supports strings. So we have to do shell escaping and hope for the best...
     command = Shellwords.shelljoin(command) if command.is_a?(Array)
@@ -108,6 +125,12 @@ action_class do
     exit_code = nil
     exit_signal = nil
     session.open_channel do |channel|
+      if request_pty
+        channel.request_pty do |_ch, success|
+          raise 'failed to allocate a requested PTY for command' unless success
+        end
+      end
+
       channel.exec(command) do |_ch, success|
         abort "FAILED: couldn't execute command (ssh.channel.exec)" unless success
         channel.on_data { |_, data| stdout_data += data }
