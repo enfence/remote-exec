@@ -20,7 +20,7 @@ resource_name :remote_execute
 default_action :run
 
 property :command, String, name_property: true, required: true
-property :returns, [Integer, Array]
+property :returns, [Integer, Array], default: [0]
 property :timeout, Integer, default: 60
 property :user, String
 property :password, String
@@ -46,14 +46,10 @@ action :run do
                     "stdout #{r[0]}, "\
                     "stderr #{r[1]}")
     # check return code?
-    if property_is_set?(:returns)
-      if new_resource.returns.is_a?(Array)
-        raise r[1] unless new_resource.returns.include?(r[2])
-      else
-        raise r[1] unless r[2] == new_resource.returns
-      end
+    if new_resource.returns.is_a?(Array)
+      raise r[1] unless new_resource.returns.include?(r[2])
     else
-      raise r[1] unless r[2] == 0
+      raise r[1] unless r[2] == new_resource.returns
     end
   end if really_run
 end
