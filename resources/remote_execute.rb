@@ -33,8 +33,12 @@ property :only_if_remote, String
 action :run do
   Chef::Log.debug('remote_execute.rb: action_run')
   really_run = true
-  really_run = (re_not_if(new_resource.not_if_remote) == false) unless new_resource.not_if_remote.nil? || new_resource.not_if_remote.empty?
-  really_run = (re_only_if(new_resource.only_if_remote) == true) unless new_resource.only_if_remote.nil? || new_resource.only_if_remote.empty?
+  if really_run && !new_resource.not_if_remote.nil? && !new_resource.not_if_remote.empty?
+    really_run = re_not_if(new_resource.not_if_remote) == false
+  end
+  if really_run && !new_resource.only_if_remote.nil? && !new_resource.only_if_remote.empty?
+    really_run = re_only_if(new_resource.only_if_remote) == true
+  end
   converge_by("Executing #{new_resource.command} on server #{new_resource.address} as #{new_resource.user}") do
     r = runcmd(new_resource.command)
     Chef::Log.debug("remote_execute.rb: action_run(#{new_resource.command}) "\
