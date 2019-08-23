@@ -1,7 +1,6 @@
 ---
 driver:
   name: dokken
-  chef_version: 12
 
 transport:
   name: dokken
@@ -29,7 +28,31 @@ platforms:
       pid_one_command: /usr/lib/systemd/systemd
 
 suites:
-  - name: default
+  - name: chef-12
+    driver:
+      chef_version: 12
+    run_list:
+      - recipe[test::sshd]
+      - recipe[test::exectest]
+    verifier:
+      inspec_tests:
+        - test/recipes
+    attributes:
+
+  - name: chef-13
+    driver:
+      chef_version: 13
+    run_list:
+      - recipe[test::sshd]
+      - recipe[test::exectest]
+    verifier:
+      inspec_tests:
+        - test/recipes
+    attributes:
+
+  - name: chef-14
+    driver:
+      chef_version: 14
     run_list:
       - recipe[test::sshd]
       - recipe[test::exectest]

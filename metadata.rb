@@ -8,5 +8,7 @@ version '0.2.0'
 issues_url 'https://github.com/enfence/remote-exec/issues' if respond_to?(:issues_url)
 source_url 'https://github.com/enfence/remote-exec' if respond_to?(:source_url)
 chef_version '~> 12.0'
+chef_version '~> 13.0'
+chef_version '~> 14.0'
 supports 'ubuntu', '= 16.04'
 supports 'centos', '~> 7'

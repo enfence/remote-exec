@@ -33,20 +33,20 @@ property :only_if_remote, String
 action :run do
   Chef::Log.debug('remote_execute.rb: action_run')
   really_run = true
-  really_run = (re_not_if(not_if_remote) == false) unless not_if_remote.nil? || not_if_remote.empty?
-  really_run = (re_only_if(only_if_remote) == true) unless only_if_remote.nil? || only_if_remote.empty?
-  converge_by("Executing #{command} on server #{address} as #{user}") do
-    r = runcmd(command)
-    Chef::Log.debug("remote_execute.rb: action_run(#{command}) "\
+  really_run = (re_not_if(new_resource.not_if_remote) == false) unless new_resource.not_if_remote.nil? || new_resource.not_if_remote.empty?
+  really_run = (re_only_if(new_resource.only_if_remote) == true) unless new_resource.only_if_remote.nil? || new_resource.only_if_remote.empty?
+  converge_by("Executing #{new_resource.command} on server #{new_resource.address} as #{new_resource.user}") do
+    r = runcmd(new_resource.command)
+    Chef::Log.debug("remote_execute.rb: action_run(#{new_resource.command}) "\
                     "return code #{r[2]}, "\
                     "stdout #{r[0]}, "\
                     "stderr #{r[1]}")
     # check return code?
     if property_is_set?(:returns)
-      if returns.is_a?(Array)
-        raise r[1] unless returns.include?(r[2])
+      if new_resource.returns.is_a?(Array)
+        raise r[1] unless new_resource.returns.include?(r[2])
       else
-        raise r[1] unless r[2] == returns
+        raise r[1] unless r[2] == new_resource.returns
       end
     else
       raise r[1] unless r[2] == 0

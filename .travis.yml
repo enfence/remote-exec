@@ -18,6 +18,12 @@ jobs:
     name: "ChefSpec"
     script:
     - chef exec rspec
-  - name: "Kitchen"
+  - name: "Kitchen Chef 12"
     script:
-    - kitchen test
+    - kitchen test chef-12-
+  - name: "Kitchen Chef 13"
+    script:
+    - kitchen test chef-13-
+  - name: "Kitchen Chef 14"
+    script:
+    - kitchen test chef-14-
