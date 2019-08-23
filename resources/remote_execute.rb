@@ -21,7 +21,7 @@ property :command, String, name_property: true, required: true
 property :returns, [Integer, Array], default: [0]
 property :timeout, Integer, default: 60
 property :user, String
-property :password, String
+property :password, String, sensitive: true
 property :address, String, required: true
 property :input, String
 
