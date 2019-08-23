@@ -38,7 +38,7 @@ action :run do
       break unless eval_command(session, new_resource.only_if_remote)
     end
 
-    converge_by("Executing #{new_resource.command} on server #{new_resource.address} as #{new_resource.user}") do
+    converge_by("execute #{new_resource.command.inspect} on server #{new_resource.address.inspect} as #{new_resource.user.inspect}") do
       r = ssh_exec(session, new_resource.command, input: new_resource.input)
       Chef::Log.debug("remote_execute.rb: action_run(#{new_resource.command}) "\
                       "return code #{r[2]}, "\
