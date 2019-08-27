@@ -28,6 +28,9 @@ property :interactive, [TrueClass, FalseClass], default: false
 property :request_pty, [TrueClass, FalseClass], default: false
 property :sensitive_output, [TrueClass, FalseClass], default: lazy { sensitive }
 property :sensitive_command, [TrueClass, FalseClass], default: lazy { sensitive }
+property :live_stream, [TrueClass, FalseClass], default: false
+property :max_buffer_size, Integer, default: 1048576 # approx. 1 MiB
+property :max_line_length, Integer, default: 4096 # 4 kiB
 
 property :not_if_remote, [String, Array, Hash], coerce: proc { |v| RemoteExec::Validation.coerce_guard_config(v, sensitive) }, callbacks: RemoteExec::Validation.guard_config_checks
 property :only_if_remote, [String, Array, Hash], coerce: proc { |v| RemoteExec::Validation.coerce_guard_config(v, sensitive) }, callbacks: RemoteExec::Validation.guard_config_checks
@@ -69,9 +72,35 @@ action :run do
     descriptor = "#{masked_command(new_resource.command.inspect, new_resource.sensitive_command)} on server #{new_resource.address.inspect} as #{new_resource.user.inspect}"
 
     converge_by("execute #{descriptor}") do
-      stdout, stderr, exit_code, exit_signal = ssh_exec(session,
-                                                        new_resource.command,
-                                                        command_options)
+      if new_resource.live_stream
+        output_prefix = "[#{new_resource.address}] "
+        nlines = 0
+        exit_code, exit_signal = line_buffered_exec(session,
+                                                    new_resource.command,
+                                                    command_options) do |_stream, line|
+          line << "\n" unless line.end_with?("\n")
+          nlines += 1
+          unless new_resource.sensitive_output
+            # print an empty line before the first line for alignment, but only
+            # if we actually receive output
+            puts if nlines == 1
+            # using print instead of puts, since line is forced to contain a \n
+            # above.
+            print "#{output_prefix}#{line}"
+          end
+        end
+
+        if new_resource.sensitive_output
+          puts "[#{fqdn}: #{nlines} line(s) of sensitive output suppressed (disable by setting sensitive_output to false or :guards)]"
+        end
+
+        stdout = nil
+        stderr = nil
+      else
+        stdout, stderr, exit_code, exit_signal = ssh_exec(session,
+                                                          new_resource.command,
+                                                          command_options)
+      end
 
       success = allowed_exit_codes.include?(exit_code)
       unless success
@@ -170,14 +199,61 @@ action_class do
     [status_obj[:exit_code], status_obj[:exit_signal]]
   end
 
+  def extract_lines!(buffer)
+    # note that this modifies buffer in-place for efficiency
+    newline_pos = buffer.index("\n")
+    until newline_pos.nil?
+      line = buffer.slice!(0..newline_pos)
+      yield line
+      newline_pos = buffer.index("\n")
+    end
+    # maximum line length as anti-DoS measure
+    # rubocop:disable Style/GuardClause
+    if buffer.length >= new_resource.max_line_length
+      yield buffer.dup
+      buffer.clear
+    end
+    # rubocop:enable Style/GuardClause
+  end
+
+  def line_buffered_exec(session, command, options)
+    # general idea: append data received via SSH to the respective buffers, and
+    # flush the buffers to the passed block whenever a newline is encountered
+    buffers = { stdout: '', stderr: '' }
+
+    # FIXME: intelligently deal with ANSI escape codes like colour changes.
+    exit_code, exit_signal = exec_io(session, command, options) do |_channel, stream, data|
+      next unless buffers.key?(stream)
+      buffer = buffers[stream]
+      buffer << data
+      extract_lines!(buffer) do |line|
+        yield stream, line
+      end
+    end
+
+    buffers.each_pair do |stream, remainder|
+      next if remainder.empty?
+      yield stream, remainder
+    end
+
+    [exit_code, exit_signal]
+  end
+
+  def append_ringbuffer!(buffer, data)
+    buffer += data
+    return unless buffer.length > new_resource.max_buffer_size
+    to_cut = buffer.length - new_resource.max_buffer_size
+    buffer.slice!(0..to_cut)
+  end
+
   def ssh_exec(session, command, options)
     stdout_data = ''
     stderr_data = ''
     exit_code, exit_signal = exec_io(session,
                                      command,
                                      options) do |_channel, stream, data|
-      stderr_data += data if stream == :stderr
-      stdout_data += data if stream == :stdout
+      append_ringbuffer!(stderr_data, data) if stream == :stderr
+      append_ringbuffer!(stdout_data, data) if stream == :stdout
     end
     [stdout_data, stderr_data, exit_code, exit_signal]
   end

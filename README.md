@@ -28,6 +28,9 @@ remote_execute 'name' do
   sensitive         boolean         # default: false
   sensitive_command boolean         # default: sensitive
   sensitive_output  boolean         # default: sensitive
+  live_stream       boolean         # default: false
+  max_buffer_size   Integer         # default: 1 Mi (= 1048576)
+  max_line_length   Integer         # default: 4 ki (= 4096)
 
   not_if_remote String, Array, Hash # Remotely executed shell guard command like not_if
   only_if_remote String, Array, Hash # Remotely executed shell guard command like only_if
@@ -91,6 +94,31 @@ The resource has the following properties:
 
   If enabled for a command or guard (the same selection semantics as for
   `request_pty` apply), the commands will not be printed.
+
+* `live_stream` (default: false): If true, the output of the main command is
+  shown in real-time (except for line-buffering). This does not apply to guard
+  commands (the output of guard commands is only in the debug log).
+
+* `max_buffer_size`: Restrict the maximum number of codepoints in the Ruby
+  string to buffer for non-streaming commands. If the number is exceeded, older
+  data will be discarded (but the resource will continue to execute).
+
+  Setting this can cause:
+
+  - Memory exhaustion (obviously)
+  - High CPU use if the remote command exceeds the limit, since the ringbuffer
+    is not implemented very cleverly.
+
+  Note: This limit is a soft limit and may be (temporarily) exceeded by an
+  amount equal to the buffer size of the network stack.
+
+* `max_line_length`: The maximum length of a single line for streamed output.
+  If the line length is exceeded, the line is emitted as if it had been ended.
+  No *data* is lost, but ambiguity about line breaks is introduced.
+
+  Note: This limit is a soft limit and may be exceeded by an amount equal to
+  the buffer size of the network stack.
+
 
 #### Guards
 
