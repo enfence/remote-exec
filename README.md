@@ -16,20 +16,23 @@ Syntax:
 
 ```ruby
 remote_execute 'name' do
-  address     String          #
-  command     String, Array   # defaults to name
-  returns     Integer, Array  #
-  password    String          #
-  user        String          #
-  timeout     Integer         # default: 60
-  input       String          #
-  interactive boolean         # default: false
-  request_pty boolean         # default: false
+  address           String          #
+  command           String, Array   # default: name
+  returns           Integer, Array  #
+  password          String          #
+  user              String          #
+  timeout           Integer         # default: 60
+  input             String          #
+  interactive       boolean         # default: false
+  request_pty       boolean         # default: false
+  sensitive         boolean         # default: false
+  sensitive_command boolean         # default: sensitive
+  sensitive_output  boolean         # default: sensitive
 
   not_if_remote String, Array, Hash # Remotely executed shell guard command like not_if
   only_if_remote String, Array, Hash # Remotely executed shell guard command like only_if
 
-  action    Symbol            # defaults to :run
+  action    Symbol                  # default: :run
 end
 ```
 
@@ -75,6 +78,20 @@ The resource has the following properties:
     **Note:** Using a PTY will merge the standard output and standard error
     streams of the executed command.
 
+* `sensitive`: If true, `sensitive_output` and `sensitive_command` default to
+  true instead of false.
+
+* `sensitive_output` (default: `sensitive`). 
+
+  If enabled for a command or guard (the same selection semantics as for
+  `request_pty` apply), the standard output and standard error streams will not
+  be printed, either directly or in error messages.
+
+* `sensitive_command` (default: `sensitive`).
+
+  If enabled for a command or guard (the same selection semantics as for
+  `request_pty` apply), the commands will not be printed.
+
 #### Guards
 
 ##### Synopsis
@@ -84,8 +101,10 @@ following keys:
 
 ```ruby
 {
-    command: [String, Array],  # the command to execute as array or string
-    request_pty: [TrueClass, FalseClass]  # whether to request a pty. default: false
+    command: [String, Array],
+    request_pty: [TrueClass, FalseClass],  # default: false
+    sensitive_output: [TrueClass, FalseClass],  # default: sensitive
+    sensitive_command: [TrueClass, FalseClass]  # default: sensitive
 }
 ```
 
@@ -96,6 +115,11 @@ If a string or array is given instead of a hash, the `value` is converted to
   details.
 * `request_pty`: Whether to request a PTY for the guard execution. See the
   properties above for details on the implications of requesting a PTY.
+* `sensitive_output`: Whether to suppress printing the output of the guard
+  command. The default is true if the resource is marked as sensitive, false
+  otherwise.
+* `sensitive_command`: Whether to suppress printing the guard command itself.
+  The default is true if the resource is marked as sensitive, false otherwise.
 
 ##### Description
 
