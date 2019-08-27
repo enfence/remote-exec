@@ -115,15 +115,12 @@ action_class do
     retval
   end
 
-  def ssh_exec(session, command, input: nil, request_pty: false)
+  def exec_io(session, command, input: nil, request_pty: false)
     # Unfortunately, SSH does not allow passing an execv-like array and only
     # supports strings. So we have to do shell escaping and hope for the best...
     command = Shellwords.shelljoin(command) if command.is_a?(Array)
 
-    stdout_data = ''
-    stderr_data = ''
-    exit_code = nil
-    exit_signal = nil
+    status_obj = {}
     session.open_channel do |channel|
       if request_pty
         channel.request_pty do |_ch, success|
@@ -132,18 +129,41 @@ action_class do
       end
 
       channel.exec(command) do |_ch, success|
-        abort "FAILED: couldn't execute command (ssh.channel.exec)" unless success
-        channel.on_data { |_, data| stdout_data += data }
-        channel.on_extended_data do |_, type, data|
-          stderr_data += data if type == 1 # type 1 is stderr
+        raise 'failed to execute command in channel' unless success
+
+        channel.on_request('exit-status') do |_ch, data|
+          status_obj[:exit_code] = data.read_long
         end
-        channel.on_request('exit-status') { |_, data| exit_code = data.read_long }
-        channel.on_request('exit-signal') { |_, data| exit_signal = data.read_long }
+        channel.on_request('exit-signal') do |_ch, data|
+          status_obj[:exit_signal] = data.read_long
+        end
+
+        channel.on_data do |ch2, data|
+          yield ch2, :stdout, data
+        end
+
+        channel.on_extended_data do |ch2, type, data|
+          yield ch2, :stderr, data if type == 1
+        end
+
         channel.send_data(input) unless input.nil?
         # Always send EOF to prevent things from getting stuck unintentionally.
         channel.eof!
       end
     end.wait
+    [status_obj[:exit_code], status_obj[:exit_signal]]
+  end
+
+  def ssh_exec(session, command, input: nil, request_pty: false)
+    stdout_data = ''
+    stderr_data = ''
+    exit_code, exit_signal = exec_io(session,
+                                     command,
+                                     input: input,
+                                     request_pty: request_pty) do |_channel, stream, data|
+      stderr_data += data if stream == :stderr
+      stdout_data += data if stream == :stdout
+    end
     [stdout_data, stderr_data, exit_code, exit_signal]
   end
 end
