@@ -139,10 +139,9 @@ action_class do
         end
         channel.on_request('exit-status') { |_, data| exit_code = data.read_long }
         channel.on_request('exit-signal') { |_, data| exit_signal = data.read_long }
-        unless input.nil?
-          channel.send_data(input)
-          channel.eof!
-        end
+        channel.send_data(input) unless input.nil?
+        # Always send EOF to prevent things from getting stuck unintentionally.
+        channel.eof!
       end
     end.wait
     [stdout_data, stderr_data, exit_code, exit_signal]
