@@ -1,18 +1,24 @@
-# # encoding: utf-8
-
-# Inspec test for recipe remote-exec::default
-
-# The Inspec reference, with examples and extensive documentation, can be
-# found at https://docs.chef.io/inspec_reference.html
-
-unless os.windows?
-  describe user('root') do
-    it { should exist }
-    skip 'This is an example test, replace with your own test.'
-  end
+describe file('/tmp/foo') do
+  it { should exist }
 end
 
-describe port(80) do
-  it { should_not be_listening }
-  skip 'This is an example test, replace with your own test.'
+describe file('/tmp/input') do
+  it { should exist }
+  its('content') { should eq "some test input, even with funny characters like \" and '." }
+end
+
+describe file('/tmp/should-not-exist') do
+  it { should_not exist }
+end
+
+describe file('/tmp/only-if-ok') do
+  it { should exist }
+end
+
+describe file('/tmp/not-if-ok') do
+  it { should exist }
+end
+
+describe file('/tmp/not-if-smoke') do
+  it { should exist }
 end
