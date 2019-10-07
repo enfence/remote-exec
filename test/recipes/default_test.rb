@@ -22,3 +22,15 @@ end
 describe file('/tmp/not-if-smoke') do
   it { should exist }
 end
+
+describe file('/tmp/notify-before') do
+  it { should exist }
+end
+
+describe file('/tmp/notify-before-only_if_remote') do
+  it { should exist }
+end
+
+describe file('/tmp/notify-before-not_if_remote') do
+  it { should exist }
+end
