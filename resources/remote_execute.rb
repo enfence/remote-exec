@@ -17,7 +17,7 @@
 resource_name :remote_execute
 default_action :run
 
-property :command, String, name_property: true, required: true
+property :command, [String, Array], name_property: true, required: true
 property :returns, [Integer, Array], default: [0]
 property :timeout, Integer, default: 60
 property :user, String
@@ -26,8 +26,8 @@ property :address, String, required: true
 property :input, String
 property :interactive, [TrueClass, FalseClass], default: false
 
-property :not_if_remote, String
-property :only_if_remote, String
+property :not_if_remote, [String, Array]
+property :only_if_remote, [String, Array]
 
 action :run do
   Chef::Log.debug('remote_execute.rb: action_run')
@@ -99,6 +99,10 @@ action_class do
   end
 
   def ssh_exec(session, command, input: nil)
+    # Unfortunately, SSH does not allow passing an execv-like array and only
+    # supports strings. So we have to do shell escaping and hope for the best...
+    command = Shellwords.shelljoin(command) if command.is_a?(Array)
+
     stdout_data = ''
     stderr_data = ''
     exit_code = nil

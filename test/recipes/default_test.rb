@@ -34,3 +34,15 @@ end
 describe file('/tmp/notify-before-not_if_remote') do
   it { should exist }
 end
+
+describe file('/tmp/$something') do
+  it { should exist }
+end
+
+describe file('/tmp/not-if-array') do
+  it { should exist }
+end
+
+describe file('/tmp/only-if-array') do
+  it { should exist }
+end

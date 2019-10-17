@@ -17,7 +17,7 @@ Syntax:
 ```ruby
 remote_execute 'name' do
   address     String          #
-  command     String          # defaults to name
+  command     String, Array   # defaults to name
   returns     Integer, Array  #
   password    String          #
   user        String          #
@@ -25,8 +25,8 @@ remote_execute 'name' do
   input       String          #
   interactive boolean         # default: false
 
-  not_if_remote   String      # Remotely executed shell guard command like not_if
-  only_if_remote  String      # Remotely executed shell guard command like only_if
+  not_if_remote   String, Array # Remotely executed shell guard command like not_if
+  only_if_remote  String, Array # Remotely executed shell guard command like only_if
 
   action    Symbol            # defaults to :run
 end
@@ -44,7 +44,10 @@ The resource has the following actions:
 
 The resource has the following properties:
 
-* `command`: The shell command line to execute. Default value: the `name` of the resource block
+* `command`: default: `name` property
+
+    - If `command` is a string, it is executed using the remote shell directly. This means that you need to pay attention to shell meta-characters such as space, quotes, dollar signs, semicolons etc. etc.. In general, you should avoid passing an interpolated string here.
+    - If `command` is an array, the elements are shell-escaped using `Shellwords.escape` and then joined with spaces and treated as a string. Unfortunately, SSH requires a stringified command and does not support passing arrays.
 
 * `returns`: The return value for a command. This may be an array of accepted values. An exception is raised when the return value does not match. Default value: `0`.
 
@@ -67,6 +70,8 @@ There are 2 additional guards, implemented in the resource:
 * `not_if_remote`: It prevents a resource from executing, if the specified condition (command) returns on the remote server true (0).
 
 * `only_if_remote`: It allows a resource to execute, only if the specified condition (command) returns on the remote server true (0).
+
+The evaluation of the guards uses the same mechanism as `command`, so you can use either an Array or a String here.
 
 Note: In contrast to the classic chef guards, these do not support blocks, since there is no sensible way to evaluate locally created blocks on a remote machine. Likewise, choosing a different guard interpreter or passing any other additional options to the guard is not supported either.
 
