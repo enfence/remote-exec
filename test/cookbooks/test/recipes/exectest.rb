@@ -251,3 +251,12 @@ remote_execute 'array not_if_remote guard' do
   address 'localhost'
   not_if_remote ['test', '!', '-f', '/tmp/guard target file']
 end
+
+include_recipe 'test::ptytest'
+
+# Check that EOF is always sent. The following resource would timeout otherwise.
+remote_execute 'cat' do
+  user 'testuser'
+  password node['test-cookbook']['testuser']['password']
+  address 'localhost'
+end
