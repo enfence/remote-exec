@@ -67,6 +67,7 @@ remote_execute 'tee /tmp/input' do
   password node['test-cookbook']['testuser']['password']
   address 'localhost'
   input "some test input, even with funny characters like \" and '."
+  live_stream true
 end
 
 # Check that not_if_remote prevents execution and is executed remotely
